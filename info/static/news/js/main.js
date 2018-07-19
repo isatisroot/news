@@ -108,8 +108,45 @@ $(function(){
             $("#login-password-err").show();
             return;
         }
-
+        params = {
+            "mobile": mobile,
+            "password": password
+        }
+        $.ajax({
+            url: "/passport/login",
+            method: "POST",
+            data:JSON.stringify(params),
+            contentType: "application/json",
+            dataType: "json",
+            headers: {
+                "X-CSRFToken": getCookie("csrf_token")
+            },
+            success: function (res) {
+                if(res.errno == 0){
+                    location.reload()
+                }else{
+                    alert(res.errmsg)
+                }
+            }
+        })
         // 发起登录请求
+    })
+
+    // 登出表单请求
+    $(".logout").click(function () {
+        $.ajax({
+            url: "/passport/logout",
+            method: "POST",
+            contentType: "application/json",
+            dataType: "json",
+            headers: {
+                "X-CSRFToken": getCookie("csrf_token")
+            },
+            success: function () {
+                location.reload()
+
+            }
+        })
     })
 
 
@@ -122,7 +159,7 @@ $(function(){
         var mobile = $("#register_mobile").val()
         var smscode = $("#smscode").val()
         var password = $("#register_password").val()
-
+        alert(password)
 		if (!mobile) {
             $("#register-mobile-err").show();
             return;
@@ -143,6 +180,31 @@ $(function(){
             return;
         }
 
+        params = {
+            "mobile": mobile,
+            "smscode": smscode,
+            "password": password
+        }
+        $.ajax({
+            url: "/passport/register",
+            method: "POST",
+            data: JSON.stringify(params),
+            contentType: "application/json",
+            dataType: "json",
+            // 如果将下面的header注释起来，网页将无法登录
+            headers: {
+                "X-CSRFToken": getCookie("csrf_token")
+            },
+            success: function (result) {
+                if(result.errno == 0){
+                    alert('注册成功')
+                    location.reload()
+                }else{
+                    alert(result.errmsg)
+                }
+
+            }
+        })
         // 发起注册请求
 
     })
@@ -152,6 +214,10 @@ var imageCodeId = ""
 
 // TODO 生成一个图片验证码的编号，并设置页面中图片验证码img标签的src属性
 function generateImageCode() {
+    imageCodeId = generateUUID();
+//    拼接验证码地址
+    var imageCodeUrl = "/passport/images_code?code_id="+imageCodeId
+    $(".get_pic_code").attr("src", imageCodeUrl)
 
 }
 
@@ -175,6 +241,29 @@ function sendSMSCode() {
     }
 
     // TODO 发送短信验证码
+    params = {
+        "mobile": mobile,
+        "image_code": imageCode,
+        "code_id": imageCodeId
+    }
+    $.ajax({
+        url:"passport/sms_code",
+        method: "POST",
+        // 请求内容
+        data: JSON.stringify(params),
+        // 请求数据类型
+        contentType:"application/json",
+        // 请求格式
+        dataType: "json",
+        success:function (result) {
+            if(result.errno == 0){
+                alert(result.errmsg)
+            }else{
+                alert(result.errmsg)
+            }
+        }
+    })
+
 }
 
 // 调用该函数模拟点击左侧按钮

@@ -6,6 +6,7 @@ var data_querying = true;   // 是否正在向后台获取数据
 
 $(function () {
     // 首页分类切换
+    updateNewsData();
     $('.menu li').click(function () {
         var clickCid = $(this).attr('data-cid')
         $('.menu li').each(function () {
@@ -47,4 +48,27 @@ $(function () {
 
 function updateNewsData() {
     // TODO 更新新闻数据
+    $.ajax({
+        url: '/newslist?cid='+currentCid+'&page='+cur_page+'&per_page='+'10',
+        method: 'GET',
+        success: function (res) {
+            if(res.errno == 0){
+                $(".list_con").html("")
+                for (i = 0; i < res.newsList.length; i++){
+                    var news = res.newsList[i]
+                    var content = '<li>'
+                    content += '<a href="/news/' + news.id +'" class="news_pic fl"><img src="' + news.index_image_url + '?imageView2/1/w/170/h/170"></a>'
+                    content += '<a href="/news/' + news.id +'" class="news_title fl">' + news.title + '</a>'
+                    content += '<a href="/news/' + news.id +'" class="news_detail fl">' + news.digest + '</a>'
+                    content += '<div class="author_info fl">'
+                    content += '<div class="source fl">来源：' + news.source + '</div>'
+                    content += '<div class="time fl">' + news.create_time + '</div>'
+                    content += '</div>'
+                    content += '</li>'
+                    $(".list_con").append(content)
+                }
+            }
+        }
+
+    })
 }

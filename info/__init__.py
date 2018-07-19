@@ -1,12 +1,15 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_wtf.csrf import CSRFProtect
-from flask_session import Session
-from redis import StrictRedis
-from config import config
 import logging
 from logging.handlers import RotatingFileHandler
-from info.module import index_rule
+
+from flask import Flask, make_response, abort
+from flask_session import Session
+from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect, generate_csrf
+from redis import StrictRedis
+
+from config import config
+from info.module.index import index_rule
+
 
 db = SQLAlchemy()
 
@@ -21,15 +24,33 @@ def create_log():
     # 为全局的日志工具对象（flask app使用的）添加日志记录器
     logging.getLogger().addHandler(file_log_handler)
 
+redis_store = None
 
 def create_app(config_name):
     # create_log()
     app = Flask(__name__)
     app.config.from_object(config[config_name])
-    db = SQLAlchemy(app)
-    redis_store = StrictRedis(host=config[config_name].redis_host, port=config[config_name].redis_host)
+    db.init_app(app)
+    global redis_store
+    redis_store = StrictRedis(host=config[config_name].redis_host, port=config[config_name].redis_port, decode_responses=True)
+    # print(redis_store)
+
     CSRFProtect(app)
+    @app.after_request
+    def after_request(response):
+        csrf_token = generate_csrf()
+        # response = make_response()   加了这句之后页面显示就为空，为什么？
+        response.set_cookie("csrf_token", csrf_token)
+
+        return response
+
     Session(app)
     app.register_blueprint(index_rule)
+
+    from info.module.passport import passport_blu
+    app.register_blueprint(passport_blu)
+
+    from info.module.news import news_rule
+    app.register_blueprint(news_rule)
 
     return app
